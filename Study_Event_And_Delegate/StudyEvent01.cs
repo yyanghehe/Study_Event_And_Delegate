@@ -11,28 +11,52 @@ namespace Study_Event_And_Delegate
 {
     public partial class StudyEvent01 : Form
     {
-        private int temperature;
-        public delegate void BoilHandler(int param);
-        public event BoilHandler BoilEvent;
-
-        public void BoilWater()
+        public class Heater
         {
-            for (int i=0; i < 100; i++)
+            private int temperature;
+            //public string type = "fasthot 001";
+           // public string area = "Chian ChengDu";
+            
+            public delegate void BoilHandler(int param);
+            public event BoilHandler BoilEvent;
+            
+            public void BoilWater()
             {
-                temperature = i;
-                if (temperature > 95)
+                for (int i = 0; i < 100; i++)
                 {
-                    if (BoilEvent != null)
+                    temperature = i;
+                    if (temperature > 95)
                     {
-                        BoilEvent(temperature);
+                        if (BoilEvent != null)
+                        {
+                            BoilEvent(temperature);
+                        }
                     }
                 }
             }
         }
-
+        public class Alarm
+        {
+            public void MakeAlert(int param)
+            {
+                Console.WriteLine("Alarm:嘀嘀嘀,水已经{0}度了:", param);
+            }
+        }
+        public class Display
+        {
+            public static void ShowMsg(int param)
+            {
+                Console.WriteLine("Display:水快烧开了,当前温度:{0}度", param);
+            }
+        }
         public StudyEvent01()
         {
             InitializeComponent();
+            Heater heater = new Heater();
+            Alarm alarm = new Alarm();
+            heater.BoilEvent += alarm.MakeAlert;
+            heater.BoilEvent += Display.ShowMsg;
+            heater.BoilWater();
         }
     }
 }

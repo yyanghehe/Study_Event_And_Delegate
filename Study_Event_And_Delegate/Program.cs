@@ -15,7 +15,7 @@ namespace Study_Event_And_Delegate
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new StudyEvent01());
         }
     }
 }
