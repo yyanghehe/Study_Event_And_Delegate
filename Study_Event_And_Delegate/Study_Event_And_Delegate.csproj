@@ -72,6 +72,12 @@
     <Compile Include="StudyEvent01.Designer.cs">
       <DependentUpon>StudyEvent01.cs</DependentUpon>
     </Compile>
+    <Compile Include="TimeOutPractice.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TimeOutPractice.Designer.cs">
+      <DependentUpon>TimeOutPractice.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="AtTestForm.resx">
       <DependentUpon>AtTestForm.cs</DependentUpon>
     </EmbeddedResource>

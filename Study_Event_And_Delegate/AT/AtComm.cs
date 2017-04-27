@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Study_Event_And_Delegate.AT
 {
@@ -15,10 +17,10 @@ namespace Study_Event_And_Delegate.AT
         string nextStr; //命令成功执行下次执行的字符串
         string elseStr; //执行失败执行的字符串
         bool sendFlag; //发送标识
-        bool isTimeOut; //超时标识
-        int timeOut=3; //超时时间
-        int startTime; //开始时间
-        bool commState; //命令执行结果
+        bool isTimeOut=false; //超时标识
+        int timeOut = 3; //超时时间
+        double startTime; //开始时间
+        bool commState=false; //命令执行结果
         string PortERROR; //串口出现的Error信息
         public static bool ATE;
         /// <summary>
@@ -35,7 +37,7 @@ namespace Study_Event_And_Delegate.AT
             {
                 sendStr = value;
                 AtCommEventArgs e = new AtCommEventArgs(value);
-                PortSendEvent?.Invoke(this, e);
+                PortBeforSendEvent?.Invoke(this, e);
             }
         }
         /// <summary>
@@ -50,9 +52,14 @@ namespace Study_Event_And_Delegate.AT
 
             set
             {
-                receviceStr = value;
-                AtCommEventArgs e = new AtCommEventArgs(value);
-                PortReceviceEvent?.Invoke(this,e);
+                if (!isTimeOut)
+                {
+                    cancleaction.Cancel();
+                    receviceStr = value;
+                    new Recive(this);
+                    AtCommEventArgs e = new AtCommEventArgs(value);
+                    PortReceviceEvent?.Invoke(this, e);
+                }
             }
         }
         /// <summary>
@@ -127,6 +134,11 @@ namespace Study_Event_And_Delegate.AT
 
             set
             {
+                if (value)
+                {
+                    AtCommEventArgs e = new AtCommEventArgs(value);
+                    PortTimeOutEvent?.Invoke(this,e);
+                }
                 isTimeOut = value;
             }
         }
@@ -148,7 +160,7 @@ namespace Study_Event_And_Delegate.AT
         /// <summary>
         /// 开始时间
         /// </summary>
-        public int StartTime
+        public double StartTime
         {
             get
             {
@@ -173,6 +185,11 @@ namespace Study_Event_And_Delegate.AT
             set
             {
                 commState = value;
+                if (!value)
+                {
+                    AtCommEventArgs e = new AtCommEventArgs(value);
+                    PortCommFailEvent?.Invoke(this, e);
+                }
             }
         }
         /// <summary>
@@ -188,6 +205,8 @@ namespace Study_Event_And_Delegate.AT
             set
             {
                 PortERROR = value;
+                AtCommEventArgs e = new AtCommEventArgs(value);
+                PortErrorEvent?.Invoke(this, e);
             }
         }
 
@@ -196,10 +215,17 @@ namespace Study_Event_And_Delegate.AT
         //public event PortReceviceEventHandler PortReceviceEvent;//接收数据事件
         public event EventHandler<AtCommEventArgs> PortSendEvent;//发送数据事件
         public event EventHandler<AtCommEventArgs> PortTimeOutEvent;//超时事件
-        public event EventHandler<AtCommEventArgs> PortReceviceEvent;
+        public event EventHandler<AtCommEventArgs> PortReceviceEvent;//接收数据事件
+        public event EventHandler<AtCommEventArgs> PortBeforSendEvent;//发送数据前
+        public event EventHandler<AtCommEventArgs> PortErrorEvent;//串口发生错误
+        /// <summary>
+        /// 命令执行错误
+        /// </summary>
+        public event EventHandler<AtCommEventArgs> PortCommFailEvent;
 
         //激活超时事件
-        public void RaisePortTimeOutEvent(){
+        public void RaisePortTimeOutEvent()
+        {
             AtCommEventArgs e = new AtCommEventArgs(IsTimeOut);
             PortTimeOutEvent?.Invoke(this, e);
         }
@@ -207,7 +233,7 @@ namespace Study_Event_And_Delegate.AT
         public void RaisePortSendEvent(bool sendFlag)
         {
             AtCommEventArgs e = new AtCommEventArgs(sendFlag);
-            PortSendEvent?.Invoke(this, e); 
+            PortSendEvent?.Invoke(this, e);
         }
         public void RaisePortReceviceEvent(byte[] bytes)
         {
@@ -216,7 +242,7 @@ namespace Study_Event_And_Delegate.AT
         public class AtCommEventArgs : EventArgs
         {
             bool handle;
-            string str;
+            public string str;
             public AtCommEventArgs(string str)
             {
                 this.str = str;
@@ -229,12 +255,13 @@ namespace Study_Event_And_Delegate.AT
 
         }
         private delegate void longToShort(string[] strs);
-        private void setStrs(string[] strs, longToShort DoLongToShort) {
+        private void setStrs(string[] strs, longToShort DoLongToShort)
+        {
             DoLongToShort(strs);
         }
-        public AtComm(string longStr)
-        {
-            string[] strs = longStr.Split(new string[] {" "},StringSplitOptions.None);
+        CancellationTokenSource cancleaction = new CancellationTokenSource();
+        public AtComm(string longStr) {
+            string[] strs = longStr.Split(new string[] { " " }, StringSplitOptions.None);
             if (strs.Length == 3)
             {
                 setStrs(strs, If3Count);
@@ -243,9 +270,45 @@ namespace Study_Event_And_Delegate.AT
             {
                 setStrs(strs, If4Count);
             }
-
         }
-        private void If3Count(string[] strs) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="longStr">需要解析的字符串</param>
+        /// <param name="sp">端口</param>
+        /// <param name="endLine">是否需要加上结束符发送</param>
+        public void Run(SerialPort sp, bool endLine)
+        {
+            try
+            {
+                sp.WriteLine(SendStr + (endLine ? "\r\n" : ""));
+                StartTime = DateTime.Now.Ticks;
+            }
+            catch (Exception E)
+            {
+                this.PortERROR1 = E.Message;
+                return;
+            }
+
+            AtCommEventArgs e = new AtCommEventArgs(true);
+            PortSendEvent?.Invoke(this, e);
+            //添加超时机制
+
+            Task.Factory.StartNew(() =>
+            {
+                while (!cancleaction.IsCancellationRequested)
+                {
+                    if ((DateTime.Now.Ticks - startTime) / 10000000.0 > timeOut)
+                    {
+                        this.IsTimeOut = true;
+                        cancleaction.Cancel();
+                       
+                    }
+                }
+            });
+        }
+        private void If3Count(string[] strs)
+        {
             this.SendStr = strs[0];
             this.ExpectStr = strs[1];
             this.NextStr = strs[2];
@@ -253,20 +316,19 @@ namespace Study_Event_And_Delegate.AT
         private void If4Count(string[] strs)
         {
             If3Count(strs);
-            this.TimeOut =int.Parse( strs[3]);
+            this.TimeOut = int.Parse(strs[3]);
         }
-
-        public void runComm(SerialPort sp,bool endLine)
+        public void runComm(SerialPort sp, bool endLine)
         {
-            try { 
-            sp.WriteLine(SendStr + (endLine ? "/r/n" : ""));
+            try
+            {
+                sp.WriteLine(SendStr);
             }
-            catch(Exception E)
+            catch (Exception E)
             {
                 PortERROR1 = E.ToString();
             }
             RaisePortSendEvent(true);
-            
         }
     }
 }

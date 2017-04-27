@@ -41,8 +41,9 @@
             // 
             this.serialPort1.BaudRate = 115200;
             this.serialPort1.DtrEnable = true;
-            this.serialPort1.PortName = "COM16";
+            this.serialPort1.PortName = "COM11";
             this.serialPort1.RtsEnable = true;
+            this.serialPort1.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.serialPort1_DataReceived);
             // 
             // button1
             // 
@@ -86,7 +87,7 @@
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(278, 226);
             this.textBox3.TabIndex = 4;
-            this.textBox3.Text = "AT EOK ATI AT 10\r\nATI EOK AT+CSQ 10\r\nAT+CNMI=2 1 EOK AT+CREG? 10";
+            this.textBox3.Text = "AT EOK ATI 10\r\nATI EOK AT+CSQ 10\r\nAT+CNMI=2,1 EOK AT+CREG? 10";
             // 
             // AtTestForm
             // 
