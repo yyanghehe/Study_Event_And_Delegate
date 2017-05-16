@@ -27,7 +27,9 @@ namespace Study_Event_And_Delegate
 
         private void button1_Click(object sender, EventArgs e)
         {
-            serialPort1.Open();
+            
+                serialPort1.Open();
+           
         }
         AtComm atComm;
         int nowIndex = 0;
@@ -37,7 +39,7 @@ namespace Study_Event_And_Delegate
 
             string[] longstrs = textBox3.Text.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             atComms = new AtComm[longstrs.Length];
-            for(int i =0;i<atComms.Count();i++)
+            for (int i = 0; i < atComms.Count(); i++)
             {
                 atComms[i] = new AtComm(longstrs[i]);
                 //atComms[i].SendStr = "AT";
@@ -52,28 +54,35 @@ namespace Study_Event_And_Delegate
         int failTime = 0;
         private void AtTestForm_PortCommFailEvent(object sender, AtComm.AtCommEventArgs e)
         {
-            AtComm AT = (AtComm)sender;
-            if (failTime < 2)
-            {
-                AT.Run(serialPort1, true);
-                failTime += 1;
-            }
-            else
-            {
-                failTime = 0;
-                if (nowIndex+1 < atComms.Count())
-                {
-                    nowIndex += 1;
-                    atComms[nowIndex].Run(serialPort1, true);
-                }
-            }
+            //AtComm AT = (AtComm)sender;
+            //if (failTime < 2)
+            //{
+            //    AT.Run(serialPort1, true);
+            //    failTime += 1;
+            //}
+            //else
+            //{
+            //    failTime = 0;
+            //    if (nowIndex+1 < atComms.Count())
+            //    {
+            //        nowIndex += 1;
+            //        atComms[nowIndex].Run(serialPort1, true);
+            //    }
+            //}
         }
 
         private void AtComm_PortTimeOutEvent(object sender, AtComm.AtCommEventArgs e)
         {
             Console.Write("超时");
             AtComm AT = (AtComm)sender;
-            AT.Run(serialPort1, true);
+            //AT.Run(serialPort1, true);
+            this.BeginInvoke(new printToWindows(DoPrintToWindows), sender);
+            //if (AT.IsTimeOut && nowIndex + 1 < atComms.Count())
+            //{
+            //    Console.WriteLine("超时,执行下一条");
+            //    nowIndex += 1;
+            //    atComms[nowIndex].Run(serialPort1, true);
+            //}
         }
 
         private void AtComm_PortErrorEvent(object sender, AtComm.AtCommEventArgs e)
@@ -86,31 +95,44 @@ namespace Study_Event_And_Delegate
             AtComm AT = (AtComm)sender;
             Console.WriteLine("S:{0}", AT.SendStr);
             Console.WriteLine("R:{0}", e.str);
-            this.BeginInvoke(new printToWindows(DoPrintToWindows),sender);
-            if (AT.CommState&& nowIndex+1<atComms.Count())
-            {
-                nowIndex += 1;
-                atComms[nowIndex].Run(serialPort1, true);
-            }
-            else {  }
+            this.BeginInvoke(new printToWindows(DoPrintToWindows), sender);
+
         }
         private delegate void printToWindows(AtComm at);
         void DoPrintToWindows(AtComm at)
         {
-            textBox2.AppendText(at.ReceviceStr);
-            textBox2.AppendText("==================>" + (at.CommState ? "PASS" : "FAIL")+"\r\n");
+            //textBox2.AppendText(at.ReceviceStr);
+            if (at.CommState||at.IsTimeOut)
+            {
+                Application.DoEvents();
+                textBox2.AppendText("==================>" + (at.CommState ? "PASS" : "FAIL") + "\r\n");
+                if ( nowIndex + 1 < atComms.Count())
+                {
+                    Console.WriteLine("执行成功,执行下一条");
+                    nowIndex += 1;
+                    atComms[nowIndex].Run(serialPort1, true);
+                }
+                else { }
+            }
         }
         private void serialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
             if (serialPort1.BytesToRead > 0)
             {
+                Application.DoEvents();
                 Thread.Sleep(500);
                 int count = serialPort1.BytesToRead;
                 byte[] bytes = new byte[count];
                 serialPort1.Read(bytes, 0, count);
                 Console.WriteLine(Encoding.Default.GetString(bytes));
+                this.BeginInvoke(new addTextToWindow(doAddTextToWindow), Encoding.Default.GetString(bytes));
                 atComms[nowIndex].ReceviceStr = Encoding.Default.GetString(bytes);
             }
+        }
+        private delegate void addTextToWindow(string str);
+        void doAddTextToWindow (string str)
+        {
+            textBox2.AppendText(str);
         }
     }
 }

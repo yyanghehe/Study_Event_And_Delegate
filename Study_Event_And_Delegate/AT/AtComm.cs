@@ -52,14 +52,14 @@ namespace Study_Event_And_Delegate.AT
 
             set
             {
-                if (!isTimeOut)
-                {
-                    cancleaction.Cancel();
+                //if (!isTimeOut)
+                //{
+                    //cancleaction.Cancel();
                     receviceStr = value;
                     new Recive(this);
                     AtCommEventArgs e = new AtCommEventArgs(value);
                     PortReceviceEvent?.Invoke(this, e);
-                }
+                //}
             }
         }
         /// <summary>
@@ -134,12 +134,12 @@ namespace Study_Event_And_Delegate.AT
 
             set
             {
+                isTimeOut = value;
                 if (value)
                 {
                     AtCommEventArgs e = new AtCommEventArgs(value);
                     PortTimeOutEvent?.Invoke(this,e);
                 }
-                isTimeOut = value;
             }
         }
         /// <summary>
@@ -189,6 +189,10 @@ namespace Study_Event_And_Delegate.AT
                 {
                     AtCommEventArgs e = new AtCommEventArgs(value);
                     PortCommFailEvent?.Invoke(this, e);
+                }
+                else
+                {
+                    cancleaction.Cancel();
                 }
             }
         }
@@ -261,7 +265,7 @@ namespace Study_Event_And_Delegate.AT
         }
         CancellationTokenSource cancleaction = new CancellationTokenSource();
         public AtComm(string longStr) {
-            string[] strs = longStr.Split(new string[] { " " }, StringSplitOptions.None);
+            string[] strs = longStr.Split(new string[] { "!" }, StringSplitOptions.None);
             if (strs.Length == 3)
             {
                 setStrs(strs, If3Count);
@@ -296,13 +300,19 @@ namespace Study_Event_And_Delegate.AT
 
             Task.Factory.StartNew(() =>
             {
+                Console.WriteLine("计时开始");
                 while (!cancleaction.IsCancellationRequested)
                 {
+                   
                     if ((DateTime.Now.Ticks - startTime) / 10000000.0 > timeOut)
                     {
-                        this.IsTimeOut = true;
+                        Console.WriteLine("超时");
+                        if (!this.CommState)
+                        {
+                            this.IsTimeOut = true;
+                        }
                         cancleaction.Cancel();
-                       
+                        Console.WriteLine("计时结束");
                     }
                 }
             });

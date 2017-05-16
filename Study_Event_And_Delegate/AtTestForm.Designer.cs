@@ -87,7 +87,7 @@
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(278, 226);
             this.textBox3.TabIndex = 4;
-            this.textBox3.Text = "AT EOK ATI 10\r\nATI EOK AT+CSQ 10\r\nAT+CNMI=2,1 EOK AT+CREG? 10";
+            this.textBox3.Text = "AT+CSTT=\"cmnet\" EOK \"\" 10\r\nAT+CIICR EOK \"\" 10\r\nAT+CIFSR EOK \"\" 10";
             // 
             // AtTestForm
             // 

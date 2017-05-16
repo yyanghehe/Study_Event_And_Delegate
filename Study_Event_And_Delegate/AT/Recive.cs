@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Windows.Forms;
 
 namespace Study_Event_And_Delegate.AT
 {
@@ -28,7 +26,20 @@ namespace Study_Event_And_Delegate.AT
             //    souceStr = souceStr.Remove(0, sLength);
             //}
             //解析的字符串与期望值对比
-            Commpare(atComm);
+            if (!atComm.CommState)
+            {
+                Application.DoEvents();
+                if (!atComm.IsTimeOut)
+                {
+                    Commpare(atComm);
+                }
+                else
+                {
+                    atComm.CommState = false;
+                    return;
+                }
+            }
+            
         }
         enum expectState
         {
@@ -49,7 +60,8 @@ namespace Study_Event_And_Delegate.AT
                     }
                     else
                     {
-                        atComm.CommState = false;
+                        if(atComm.IsTimeOut)
+                            atComm.CommState = false;
                     }
                     break;
                 case (char)'C':
@@ -64,7 +76,8 @@ namespace Study_Event_And_Delegate.AT
                     }
                     else
                     {
-                        atComm.CommState = false;
+                        if (atComm.IsTimeOut)
+                            atComm.CommState = false;
                     }
                     break;
                 case (char)'E':
@@ -74,11 +87,13 @@ namespace Study_Event_And_Delegate.AT
                     }
                     else
                     {
-                        atComm.CommState = false;
+                        if (atComm.IsTimeOut)
+                            atComm.CommState = false;
                     }
                     break;
                 default:
-                    atComm.CommState = false;
+                    if (atComm.IsTimeOut)
+                        atComm.CommState = false;
                     break;
             }
             
