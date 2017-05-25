@@ -14,10 +14,13 @@ namespace Study_Event_And_Delegate.AT
              * 
              * */
             string souceStr = atComm.ReceviceStr;
+            //if (!souceStr.EndsWith("\r\n"))
+                //return;
             //截取字符串并放入字符串数组
             //int lines = souceStr.Split(new string[] { "\r\n"},StringSplitOptions.RemoveEmptyEntries).Length;//获取字符串的总行数
             //strs = new string[lines];
             strs = souceStr.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            
             //for (int i = 0; i < lines; i++)
             //{
             //    int sLength = souceStr.IndexOf("\n") + 1;
@@ -49,6 +52,7 @@ namespace Study_Event_And_Delegate.AT
         }
         private void Commpare(AtComm atComm)
         {
+           
             string expectStr = atComm.ExpectStr.Substring(1, atComm.ExpectStr.Length - 1);
             char expectHead = atComm.ExpectStr.Substring(0, 1).ToCharArray()[0];
             switch (expectHead)

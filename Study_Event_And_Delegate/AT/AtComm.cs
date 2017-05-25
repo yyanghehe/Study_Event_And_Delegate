@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Study_Event_And_Delegate.AT
 {
@@ -17,12 +18,13 @@ namespace Study_Event_And_Delegate.AT
         string nextStr; //命令成功执行下次执行的字符串
         string elseStr; //执行失败执行的字符串
         bool sendFlag; //发送标识
-        bool isTimeOut=false; //超时标识
+        bool isTimeOut = false; //超时标识
         int timeOut = 3; //超时时间
         double startTime; //开始时间
-        bool commState=false; //命令执行结果
+        bool commState = false; //命令执行结果
         string PortERROR; //串口出现的Error信息
         public static bool ATE;
+        bool haveResult = false;
         /// <summary>
         /// 发送字符串
         /// </summary>
@@ -54,11 +56,11 @@ namespace Study_Event_And_Delegate.AT
             {
                 //if (!isTimeOut)
                 //{
-                    //cancleaction.Cancel();
-                    receviceStr = value;
-                    new Recive(this);
-                    AtCommEventArgs e = new AtCommEventArgs(value);
-                    PortReceviceEvent?.Invoke(this, e);
+                //cancleaction.Cancel();
+                receviceStr += value;
+                new Recive(this);
+                AtCommEventArgs e = new AtCommEventArgs(value);
+                PortReceviceEvent?.Invoke(this, e);
                 //}
             }
         }
@@ -138,7 +140,7 @@ namespace Study_Event_And_Delegate.AT
                 if (value)
                 {
                     AtCommEventArgs e = new AtCommEventArgs(value);
-                    PortTimeOutEvent?.Invoke(this,e);
+                    PortTimeOutEvent?.Invoke(this, e);
                 }
             }
         }
@@ -214,6 +216,19 @@ namespace Study_Event_And_Delegate.AT
             }
         }
 
+        public bool HaveResult
+        {
+            get
+            {
+                return haveResult;
+            }
+
+            set
+            {
+                haveResult = value;
+            }
+        }
+
         //事件
         //public delegate void PortReceviceEventHandler(object sender,PortReceviceEventArgs e);
         //public event PortReceviceEventHandler PortReceviceEvent;//接收数据事件
@@ -264,7 +279,8 @@ namespace Study_Event_And_Delegate.AT
             DoLongToShort(strs);
         }
         CancellationTokenSource cancleaction = new CancellationTokenSource();
-        public AtComm(string longStr) {
+        public AtComm(string longStr)
+        {
             string[] strs = longStr.Split(new string[] { "!" }, StringSplitOptions.None);
             if (strs.Length == 3)
             {
@@ -303,7 +319,7 @@ namespace Study_Event_And_Delegate.AT
                 Console.WriteLine("计时开始");
                 while (!cancleaction.IsCancellationRequested)
                 {
-                   
+
                     if ((DateTime.Now.Ticks - startTime) / 10000000.0 > timeOut)
                     {
                         Console.WriteLine("超时");
