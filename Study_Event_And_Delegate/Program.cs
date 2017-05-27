@@ -15,13 +15,13 @@ namespace Study_Event_And_Delegate
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            try {
+            //try {
             Application.Run(new AtTestForm());
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e.TargetSite.DeclaringType.FullName);
-            }
+            //}
+            //catch(Exception e)
+            //{
+                //Console.WriteLine(e.TargetSite.DeclaringType.FullName);
+            //}
         }
     }
 }

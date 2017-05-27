@@ -120,11 +120,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ATC2\ATC2.cs" />
     <Compile Include="AtTestForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="AtTestForm.Designer.cs">
       <DependentUpon>AtTestForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AtTestForm2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AtTestForm2.Designer.cs">
+      <DependentUpon>AtTestForm2.cs</DependentUpon>
     </Compile>
     <Compile Include="AT\AtComm.cs" />
     <Compile Include="AT\Recive.cs" />
@@ -142,6 +149,8 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RUNATC2S\RUNATC2S.cs" />
+    <Compile Include="StringToATC2S\StringToATC2S.cs" />
     <Compile Include="StudyEvent01.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -156,6 +165,9 @@
     </Compile>
     <EmbeddedResource Include="AtTestForm.resx">
       <DependentUpon>AtTestForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AtTestForm2.resx">
+      <DependentUpon>AtTestForm2.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MyPracticeForm.resx">
       <DependentUpon>MyPracticeForm.cs</DependentUpon>

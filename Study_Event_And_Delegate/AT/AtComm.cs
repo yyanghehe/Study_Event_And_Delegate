@@ -25,6 +25,7 @@ namespace Study_Event_And_Delegate.AT
         string PortERROR; //串口出现的Error信息
         public static bool ATE;
         bool haveResult = false;
+        int index;
         /// <summary>
         /// 发送字符串
         /// </summary>
@@ -59,8 +60,11 @@ namespace Study_Event_And_Delegate.AT
                 //cancleaction.Cancel();
                 receviceStr += value;
                 new Recive(this);
-                AtCommEventArgs e = new AtCommEventArgs(value);
-                PortReceviceEvent?.Invoke(this, e);
+                if (this.commState)
+                {
+                    AtCommEventArgs e = new AtCommEventArgs(value);
+                    PortReceviceEvent?.Invoke(this, e);
+                }
                 //}
             }
         }
@@ -189,11 +193,12 @@ namespace Study_Event_And_Delegate.AT
                 commState = value;
                 if (!value)
                 {
-                    AtCommEventArgs e = new AtCommEventArgs(value);
-                    PortCommFailEvent?.Invoke(this, e);
+                    
                 }
                 else
                 {
+                    AtCommEventArgs e = new AtCommEventArgs(value);
+                    PortSourceSuccessEvent?.Invoke(this, e);
                     cancleaction.Cancel();
                 }
             }
@@ -229,6 +234,19 @@ namespace Study_Event_And_Delegate.AT
             }
         }
 
+        public int Index
+        {
+            get
+            {
+                return index;
+            }
+
+            set
+            {
+                index = value;
+            }
+        }
+
         //事件
         //public delegate void PortReceviceEventHandler(object sender,PortReceviceEventArgs e);
         //public event PortReceviceEventHandler PortReceviceEvent;//接收数据事件
@@ -240,7 +258,7 @@ namespace Study_Event_And_Delegate.AT
         /// <summary>
         /// 命令执行错误
         /// </summary>
-        public event EventHandler<AtCommEventArgs> PortCommFailEvent;
+        public event EventHandler<AtCommEventArgs> PortSourceSuccessEvent;
 
         //激活超时事件
         public void RaisePortTimeOutEvent()
@@ -294,13 +312,13 @@ namespace Study_Event_And_Delegate.AT
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="longStr">需要解析的字符串</param>
         /// <param name="sp">端口</param>
         /// <param name="endLine">是否需要加上结束符发送</param>
         public void Run(SerialPort sp, bool endLine)
         {
             try
             {
+                Console.WriteLine("计时开始");
                 sp.WriteLine(SendStr + (endLine ? "\r\n" : ""));
                 StartTime = DateTime.Now.Ticks;
             }

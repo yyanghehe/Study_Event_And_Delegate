@@ -94,7 +94,8 @@
             this.textBox3.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.textBox3.Size = new System.Drawing.Size(354, 428);
             this.textBox3.TabIndex = 4;
-            this.textBox3.Text = "AT+CSTT=\"cmnet\" EOK \"\" 10\r\nAT+CIICR EOK \"\" 10\r\nAT+CIFSR EOK \"\" 10";
+            this.textBox3.Text = "AT!EOK!\"\"!10\r\nAT!EOK!\"\"!10\r\nAT!EOK!\"\"!10\r\nAT!EOK!\"\"!10\r\nAT!EOK!\"\"!10\r\nAT!EOK!\"\"!1" +
+    "0\r\nAT+CREG?!C+CREG: 0,1!\"\"!10\r\nAT+CREG?!EOK!\"\"!10\r\nAT+CPIN?!EOK!\"\"!10";
             // 
             // button3
             // 

@@ -11,6 +11,7 @@ using Study_Event_And_Delegate.AT;
 using System.IO.Ports;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Study_Event_And_Delegate
 {
@@ -56,10 +57,14 @@ namespace Study_Event_And_Delegate
 
         AtComm atComm;
         int nowIndex = 0;
-        AtComm[] atComms;
+        //AtComm[] atComms;
         double ST;
         bool listRun = false;
         int RunTimes;
+        bool atSendOver = false;
+        bool atReceviceOver = false;
+        AutoResetEvent myEvent = new AutoResetEvent(false);
+        //ManualResetEvent myEvent= new ManualResetEvent(false);
         private void button2_Click(object sender, EventArgs e)
         {
             //(DateTime.Now.Ticks - startTime) / 10000000.0
@@ -70,108 +75,117 @@ namespace Study_Event_And_Delegate
             }
             if (serialPort1.IsOpen)
             {
-                listRun = true;
-                button2.Enabled = false;
-                ST = DateTime.Now.Ticks / 10000000.0;
+                startRun();
                 string[] longstrs = textBox3.Text.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                atComms = new AtComm[longstrs.Length];
-                for (int i = 0; i < atComms.Count(); i++)
-                {
-                    atComms[i] = new AtComm(longstrs[i]);
-                    //atComms[i].SendStr = "AT";
-                    atComms[i].PortReceviceEvent += AtComm_PortReceviceEvent;
-                    atComms[i].PortErrorEvent += AtComm_PortErrorEvent;
-                    atComms[i].PortTimeOutEvent += AtComm_PortTimeOutEvent;
-                    atComms[i].PortCommFailEvent += AtTestForm_PortCommFailEvent;
-                }
-                nowIndex = 0;
-                atComms[nowIndex].Run(serialPort1, true);
+                myEvent.Set();
+                //atComms = new AtComm[longstrs.Length];
+                atSendOver = false;
+                atReceviceOver = false;
+                Thread myThread = new Thread(new ParameterizedThreadStart(runATCS));
+                myThread.Start(longstrs);
             }
         }
-        int failTime = 0;
-        private void AtTestForm_PortCommFailEvent(object sender, AtComm.AtCommEventArgs e)
+        string failCaseName = "";
+        void startRun()
         {
-            //AtComm AT = (AtComm)sender;
-            //if (failTime < 2)
-            //{
-            //    AT.Run(serialPort1, true);
-            //    failTime += 1;
-            //}
-            //else
-            //{
-            //    failTime = 0;
-            //    if (nowIndex+1 < atComms.Count())
-            //    {
-            //        nowIndex += 1;
-            //        atComms[nowIndex].Run(serialPort1, true);
-            //    }
-            //}
+            listRun = true;
+            button2.Enabled = false;
+            textBox2.Text = "";
+            ST = DateTime.Now.Ticks / 10000000.0;
+            allCase = 0;
+            failCase = 0;
+            passCase = 0;
+            failCaseName = "";
+        }
+        void runATCS(object obj)
+        {
+            string[] strs = (string[])obj;
+            for (int i = 0; i < strs.Count(); i++)
+            {
+                myEvent.WaitOne();
+                atComm = new AtComm(strs[i]);
+                //atComms[i].SendStr = "AT";
+                atComm.PortReceviceEvent += AtComm_PortReceviceEvent;
+                atComm.PortErrorEvent += AtComm_PortErrorEvent;
+                atComm.PortTimeOutEvent += AtComm_PortTimeOutEvent;
+                atComm.PortSourceSuccessEvent += AtComm_PortSourceSuccessEvent;
+                atComm.Index = i;
+                atComm.Run(serialPort1, true);
+            }
+            atSendOver = true;
+        }
+        int failTime = 0;
+        private void AtComm_PortSourceSuccessEvent(object sender, AtComm.AtCommEventArgs e)
+        {
+            AtComm AT = (AtComm)sender;
+            Console.WriteLine("S:{0}", AT.SendStr);
+            Console.WriteLine("R:{0}", AT.ReceviceStr);
+            if (AT.Index == atComm.Index)
+            {
+                this.BeginInvoke(new printToWindows(DoPrintToWindows));
+            }
         }
 
         private void AtComm_PortTimeOutEvent(object sender, AtComm.AtCommEventArgs e)
         {
             Console.Write("超时");
             AtComm AT = (AtComm)sender;
-            //AT.Run(serialPort1, true);
-            this.BeginInvoke(new printToWindows(DoPrintToWindows), sender);
-            //if (AT.IsTimeOut && nowIndex + 1 < atComms.Count())
-            //{
-            //    Console.WriteLine("超时,执行下一条");
-            //    nowIndex += 1;
-            //    atComms[nowIndex].Run(serialPort1, true);
-            //}
+            if (AT.Index == atComm.Index) { 
+            this.BeginInvoke(new printToWindows(DoPrintToWindows));
+            }
         }
 
         private void AtComm_PortErrorEvent(object sender, AtComm.AtCommEventArgs e)
         {
+            //myEvent.Set();
             Console.Write("ERROR:{0}", e.str);
         }
 
         private void AtComm_PortReceviceEvent(object sender, AtComm.AtCommEventArgs e)
         {
-            AtComm AT = (AtComm)sender;
-            Console.WriteLine("S:{0}", AT.SendStr);
-            Console.WriteLine("R:{0}", e.str);
-            this.BeginInvoke(new printToWindows(DoPrintToWindows), sender);
-
+            
         }
-        private delegate void printToWindows(AtComm at);
-        void DoPrintToWindows(AtComm at)
+        private delegate void printToWindows();
+        int allCase = 0;
+        int failCase = 0;
+        int passCase = 0;
+        void DoPrintToWindows()
         {
-            if (at.HaveResult)
-            {
-                return;
-            }
             //textBox2.AppendText(at.ReceviceStr);
-            if (at.CommState || at.IsTimeOut)
+            if (atComm.CommState || atComm.IsTimeOut)
             {
-                Application.DoEvents();
-                textBox2.AppendText("==================>" + (at.CommState ? "PASS" : "FAIL") + "\r\n");
-                at.HaveResult = true;
-                if (nowIndex + 1 < atComms.Count())
+                
+                textBox2.AppendText("==================>" + (atComm.CommState ? "PASS" : "FAIL") + "\r\n");
+                if (atComm.CommState)
                 {
-                    Console.WriteLine("执行成功,执行下一条");
-                    nowIndex += 1;
-                    atComms[nowIndex].Run(serialPort1, true);
+                    passCase += 1;
                 }
                 else
                 {
-                    if (RunTimes > 0)
-                    {
-                        RunTimes--;
-                        textBox4.Text = RunTimes.ToString();
-                        button2_Click(button2, new EventArgs());
-                    }
-                    else
-                    {
-                        saveLog();
-                        listRun = false;
-                        button2.Enabled = true;
-                        double ET = DateTime.Now.Ticks / 10000000.0;
-                        textBox2.AppendText("用例完成,耗时" + (ET - ST).ToString("f2") + "S\r\n");
-                    }
+                    failCase += 1;
+                    failCaseName +=(atComm.Index+1) +":"+ atComm.SendStr+"\r\n";
+                }
+                myEvent.Set();
+
+                if (atSendOver)
+                {
+                    endRun();
                 }
             }
+        }
+        void endRun()
+        {
+            atReceviceOver = true;
+            double ET = DateTime.Now.Ticks / 10000000.0;
+            textBox2.AppendText("用例完成,耗时" + (ET - ST).ToString("f2") + "S\r\n");
+            string append = "总共执行"+(failCase+passCase)+"条用例"+"\r\n"+"fail:" + failCase + "  " + "pass:" + passCase + "  " + "\r\n" ;
+            if (failCase > 0)
+            {
+                append += "失败用例:" + "\r\n" + failCaseName;
+            }
+            textBox2.AppendText(append);
+            saveLog();
+            button2.Enabled = true;
         }
         private void serialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
@@ -183,11 +197,10 @@ namespace Study_Event_And_Delegate
                 int count = serialPort1.BytesToRead;
                 byte[] bytes = new byte[count];
                 serialPort1.Read(bytes, 0, count);
-                Console.WriteLine(Encoding.Default.GetString(bytes));
                 this.BeginInvoke(new addTextToWindow(doAddTextToWindow), Encoding.Default.GetString(bytes));
                 if (listRun)
                 {
-                    atComms[nowIndex].ReceviceStr = Encoding.Default.GetString(bytes);
+                    atComm.ReceviceStr = Encoding.Default.GetString(bytes);
                 }
             }
         }

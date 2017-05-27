@@ -58,7 +58,7 @@ namespace Study_Event_And_Delegate.AT
             switch (expectHead)
             {
                 case (char)'S':
-                    if (strs[0].StartsWith(expectStr))
+                    if (strs[0].Contains(expectStr))
                     {
                         atComm.CommState = true;
                     }
@@ -70,7 +70,7 @@ namespace Study_Event_And_Delegate.AT
                     break;
                 case (char)'C':
                     string afterS="";
-                    for(int i = 1; i < strs.Length-1; i++)
+                    for(int i = 0; i < strs.Length; i++)
                     {
                         afterS += strs[i];
                     }
